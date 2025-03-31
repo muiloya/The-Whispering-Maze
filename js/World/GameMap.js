@@ -33,8 +33,7 @@ export class GameMap {
 
     // Create our graph!
     this.mapGraph = new MapGraph(cols, rows);
-    
-    
+     
     // Generate our maze here!
     this.mazeGenerator = new MazeGenerator(this.mapGraph);
     // this.mazeGenerator.dfsMaze(this.mapGraph.get(0));
@@ -47,6 +46,10 @@ export class GameMap {
     // Create our game object
     this.gameObject = this.mapRenderer.createRendering();
 
+    // Create our start & goal nodes. @TODO: needs refactoring for sure!!
+    this.goal = this.createRandomGoal();
+    this.costmap = this.mapGraph.singleGoalDijkstra(this.goal);
+    this.start = this.createRandomStart(this.goal, this.costmap, 20);
   }
 
   
@@ -67,6 +70,28 @@ export class GameMap {
     return this.mapGraph.getAt(nodeI, nodeJ);
   }
 
-  
+  createRandomGoal() {
+    let goalNode = this.mapGraph.getRandomGroundNode();
+    this.gameObject.add(this.mapRenderer.highlight(goalNode, 'green'));
+    return goalNode;
+  }
+
+  createRandomStart(goal, costMap, minDistance) {
+    let startNode = null;
+
+    // Keep trying until we find a valid start node
+    while (!startNode) {
+        let randomNode = this.mapGraph.getRandomGroundNode();
+
+        // Ensure the node is far enough from the goal
+        if (costMap.get(randomNode) >= minDistance) {
+            startNode = randomNode;
+
+            // Highlight the start node in blue
+            this.gameObject.add(this.mapRenderer.highlight(startNode, 'red'));
+        }
+    }
+    return startNode;
+  }
 
 }

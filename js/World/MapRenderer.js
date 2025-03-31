@@ -123,5 +123,34 @@ export class MapRenderer {
     return walls;
   }
 
+  // Create an individual tile geometry
+  createTileGeometry(node, height) {
+    // The coordinates of our top left edge of the tile
+    let position = this.gameMap.localize(node);
+
+    // Set the geometry of our tile
+    let geometry = 
+      new THREE.BoxGeometry(
+        this.gameMap.tileSize, 
+        height,
+        this.gameMap.tileSize
+      );
+
+    // Translate our geomtery to the required position
+    geometry.translate(position);
+    geometry.translate(0, height/2, 0);
+
+    return geometry;
+  }
+
+  // Highlight a particular node/tile of a specified colour
+  highlight(node, color) {
+    
+    let geometry = this.createTileGeometry(node, 1)
+    let material = new THREE.MeshStandardMaterial({color: color});
+
+    return new THREE.Mesh(geometry, material);
+
+  }
 
 }
