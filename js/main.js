@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GameMap } from './World/GameMap.js';
+import { Player } from './Behaviour/Player/Player.js';
 
 
 // Create Scene
@@ -42,6 +43,7 @@ function init() {
   // Create our gameMap
   gameMap = new GameMap();
   scene.add(gameMap.gameObject);
+
 
   // First call to animate
   animate();
