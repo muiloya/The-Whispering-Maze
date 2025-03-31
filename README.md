@@ -7,7 +7,8 @@
 - [ ] Create vector flowfield (non-visual for the oracle to use)  
 - [ ] Fix imports in behavior files  
 - [ ] Adjust player movement key mapping to WASD (or support both) (controller.js)  
-- [ ] Set up collision avoidance for player (player shouldn't be able to go through walls)  
+- [ ] Set up collision avoidance for player (player shouldn't be able to go through walls)
+- [ ] Set up collision avoidance for oracle when following player  
 - [ ] Set up oracle states: following, hinting, solving  
 
 ## Tasks that can be done anytime
