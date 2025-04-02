@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { VectorUtil } from '../Util/VectorUtil.js';
 
 export class Controller {
 
@@ -20,17 +19,17 @@ export class Controller {
   // Handling our key events
   handleEvent(event) {
     if (event.type === 'keydown') {
-      if (event.code === 'ArrowUp') { this.forward = true; }
-      else if (event.code === 'ArrowDown') { this.backward = true; }
-      else if (event.code === 'ArrowLeft') { this.left = true; }
-      else if (event.code === 'ArrowRight') { this.right = true; }
+      if (event.code === 'ArrowUp' || event.code === 'KeyW') { this.forward = true; }
+      else if (event.code === 'ArrowDown' || event.code === 'KeyS') { this.backward = true; }
+      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') { this.left = true; }
+      else if (event.code === 'ArrowRight' || event.code === 'KeyD') { this.right = true; }
     }
     
     else if (event.type === 'keyup') {
-      if (event.code === 'ArrowUp') { this.forward = false; }
-      else if (event.code === 'ArrowDown') { this.backward = false; }
-      else if (event.code === 'ArrowLeft') { this.left = false; }
-      else if (event.code === 'ArrowRight') { this.right = false; }      
+      if (event.code === 'ArrowUp' || event.code === 'KeyW') { this.forward = false; }
+      else if (event.code === 'ArrowDown' || event.code === 'KeyS') { this.backward = false; }
+      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') { this.left = false; }
+      else if (event.code === 'ArrowRight' || event.code === 'KeyD') { this.right = false; }      
     }
   }
 

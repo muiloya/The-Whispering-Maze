@@ -1,5 +1,5 @@
-import { Character } from './Character.js';
-import { State } from './State';
+import { Character } from '../Character';
+import { State } from '../State';
 
 
 export class Player extends Character {
