@@ -21,7 +21,7 @@ let player;
 let controller;
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 50, 50);
+const cameraOffset = new THREE.Vector3(0, 15, 0);
 
 // Setup our scene
 function init() {
@@ -57,7 +57,7 @@ function init() {
   scene.add(player.gameObject);
 
   // Camera positioning
-  camera.position.copy(player.location).add(new THREE.Vector3(0, 50, 50));
+  camera.position.copy(player.location).add(cameraOffset);
   camera.lookAt(player.location);
 
 

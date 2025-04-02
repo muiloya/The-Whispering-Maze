@@ -14,7 +14,7 @@ export class Character {
     this.size = 5;
 
     // Creating a cone game object for our Character
-    let coneGeo = new THREE.ConeGeometry(this.size/2, this.size, 10);
+    let coneGeo = new THREE.ConeGeometry(this.size/4, this.size/2, 10);
     let coneMat = new THREE.MeshStandardMaterial({color: color});
     let mesh = new THREE.Mesh(coneGeo, coneMat);
     mesh.rotation.x = Math.PI/2;
