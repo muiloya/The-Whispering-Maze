@@ -41,8 +41,12 @@ export class Oracle extends NPC {
     this.hintCooldown = 3;
     this.lastHintTime = 0;
     
-    this.slowRadius = 2;
-    this.followDistance = 7;
+    this.topSpeed = 30;          // Increased top speed
+    this.maxForce = 50;          // Stronger steering force
+    this.followDistance = 6;     // Distance to maintain
+    this.slowingRadius = 4;      // Start slowing within this radius
+    this.panicDistance = 3;    // Full stop when this close
+
   }
 
   switchState(newState) {
@@ -61,16 +65,36 @@ export class Oracle extends NPC {
   }
 
   followPlayer(player) {
-    const playerDirection = new THREE.Vector3()
-      .copy(player.velocity)
-      .normalize();
-    
+    // Get player's movement direction from velocity
+    const playerVel = new THREE.Vector3(
+      player.velocity.x,
+      0,
+      player.velocity.z
+    ).normalize();
+  
+    // Calculate target position behind player 
     const targetPosition = new THREE.Vector3()
       .copy(player.location)
-      .sub(playerDirection.multiplyScalar(this.followDistance));
-
-    const steering = this.arrive(targetPosition, this.followDistance);
-    this.applyForce(steering);
+      .sub(playerVel.multiplyScalar(this.followDistance));
+  
+    // Use distance calculation
+    const toTarget = new THREE.Vector3(
+      targetPosition.x - this.location.x,
+      0,
+      targetPosition.z - this.location.z
+    );
+    const distance = toTarget.length();
+  
+    // Arrive behavior
+    if(distance < this.panicDistance) {
+      this.velocity.set(0, 0, 0);
+    } else {
+      const steering = this.arrive(targetPosition, this.slowingRadius);
+      this.applyForce(new THREE.Vector3(steering.x, 0, steering.z));
+    }
+  
+    // Maintain Y position if needed
+    this.location.y = player.location.y; // Match player's height if any
   }
 
   provideHint(player) {
