@@ -16,4 +16,5 @@
 - [x] Set up the camera to focus on & around the player (prevent user manipulation)  
 - [ ] Figure out hints display for the oracle (e.g., text-based hints in Three.js)  
 - [ ] Find suitable models for player & oracle  
-- [ ] Playthrough testing  
+- [ ] Playthrough testing
+- [ ] Refactor main.js
