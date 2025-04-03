@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GameMap } from './World/GameMap.js';
 import { Player } from './Behaviour/Player/Player.js';
 import { Controller } from './Behaviour/Player/Controller.js';
+import { Oracle } from './Behaviour/NPC/Oracle.js';
 
 
 // Create Scene
@@ -19,6 +20,8 @@ let gameMap;
 // Declare player and controller
 let player;
 let controller;
+let oracle;
+
 
 // Camera follow parameters
 const cameraOffset = new THREE.Vector3(0, 15, 0);
@@ -56,6 +59,11 @@ function init() {
   player.location.copy(gameMap.localize(gameMap.start));
   scene.add(player.gameObject);
 
+  oracle = new Oracle(gameMap);
+  oracle.location.copy(gameMap.localize(gameMap.start))
+          .add(new THREE.Vector3(5, 0, 5)); // Offset from player
+  scene.add(oracle.gameObject);
+
   // Camera positioning
   camera.position.copy(player.location).add(cameraOffset);
   camera.lookAt(player.location);
@@ -77,7 +85,14 @@ function animate() {
   const deltaTime = clock.getDelta();
   requestAnimationFrame(animate);
 
+  if(player) {
   player.update(deltaTime, gameMap.bounds, controller); // Pass controller
+  }
+  
+  if (oracle && player) {
+    oracle.update(deltaTime, player, gameMap.bounds);
+  }
+
   updateCameraPosition()
   renderer.render(scene, camera);
 }

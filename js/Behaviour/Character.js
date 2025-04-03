@@ -25,7 +25,7 @@ export class Character {
     this.location = new THREE.Vector3(0,0,0);
     this.velocity = new THREE.Vector3(0,0,0);
     this.acceleration = new THREE.Vector3(0,0,0);
-    this.topSpeed = 20;
+    this.topSpeed = 15;
 
     this.mass = 1;
     this.maxForce = 15;
@@ -111,7 +111,30 @@ export class Character {
     return brake;
   }
 
+  // Arrive steering behaviour
+  arrive(target, radius) {
 
+    let desired = new THREE.Vector3();
+    desired.subVectors(target, this.location);
 
+    let distance = desired.length();
+
+    // If we are close enough to
+    // the target, stop
+    if (distance < 0.01) {
+      this.velocity.setLength(0);
+    
+    // Slow down if we are within
+    // a specified radius to the target
+    } else if (distance < radius) {
+      let speed = (distance/radius) * this.topSpeed;
+      desired.setLength(speed);
+    
+    // Otherwise, proceed as seek
+    } else {
+      desired.setLength(this.topSpeed);
+    
+    }
+  }
 
 }
