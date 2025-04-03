@@ -4,6 +4,7 @@ import { GameMap } from './World/GameMap.js';
 import { Player } from './Behaviour/Player/Player.js';
 import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
+import { Resources } from './Util/Resources.js';
 
 
 // Create Scene
@@ -18,9 +19,17 @@ const clock = new THREE.Clock();
 let gameMap;
 
 // Declare player and controller
-let player;
 let controller;
 let oracle;
+const player = new Player();
+
+// Load in our resources
+let files = [{name:"sportscar",url:"/models/sportscar.glb"},
+  {name:"oracle",url:"/models/simple_ghost.glb"}];
+const resources = new Resources(files);
+await resources.loadAll();
+
+player.setModel(resources.get("sportscar"));
 
 
 // Camera follow parameters
@@ -55,13 +64,13 @@ function init() {
   scene.add(gameMap.gameObject);
 
   controller = new Controller(document, camera); // Initialize controller
-  player = new Player();
   player.location.copy(gameMap.localize(gameMap.start));
   scene.add(player.gameObject);
 
   oracle = new Oracle(gameMap);
+  oracle.setModel(resources.get("oracle"));
   oracle.location.copy(gameMap.localize(gameMap.start))
-          .add(new THREE.Vector3(5, 0, 5)); // Offset from player
+          .add(new THREE.Vector3(20, 0, 20)); // Offset from player
   scene.add(oracle.gameObject);
 
   // Camera positioning
@@ -86,9 +95,9 @@ function animate() {
   requestAnimationFrame(animate);
 
   if(player) {
-  player.update(deltaTime, gameMap.bounds, controller); // Pass controller
+    player.update(deltaTime, gameMap.bounds, controller); // Pass controller
   }
-  
+
   if (oracle && player) {
     oracle.update(deltaTime, player, gameMap.bounds);
   }
