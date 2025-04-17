@@ -30,7 +30,7 @@ export class Player extends Character {
 export class IdleState extends State {
 
   enterState(player) {
-    console.log("Idle");
+    player.applyForce(player.applyBrakes());
     // If you want to abruptly
     // stop, use this!
     // player.stop();
@@ -53,7 +53,7 @@ export class IdleState extends State {
 export class MovingState extends State {
   
   enterState(player) {
-    console.log("Moving");
+
   }
 
   updateState(player, controller) {

@@ -25,7 +25,7 @@ export class Character {
     this.location = new THREE.Vector3(0,0,0);
     this.velocity = new THREE.Vector3(0,0,0);
     this.acceleration = new THREE.Vector3(0,0,0);
-    this.topSpeed = 20;
+    this.topSpeed = 15;
 
     this.mass = 1;
     this.maxForce = 15;
@@ -110,8 +110,5 @@ export class Character {
     }
     return brake;
   }
-
-
-
 
 }

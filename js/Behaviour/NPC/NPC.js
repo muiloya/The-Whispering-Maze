@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import { VectorUtil } from '../Util/VectorUtil.js';
-import { Character } from './Character.js';
+import { Character } from '../Character';
 
 /**
  * 
@@ -145,43 +144,5 @@ export class NPC extends Character {
 
 
   }
-  
-  // Arrive steering behaviour
-  arrive(target, radius) {
-
-    let desired = new THREE.Vector3();
-    desired.subVectors(target, this.location);
-
-    let distance = desired.length();
-
-    // If we are close enough to
-    // the target, stop
-    if (distance < 0.01) {
-      this.velocity.setLength(0);
-    
-    // Slow down if we are within
-    // a specified radius to the target
-    } else if (distance < radius) {
-      let speed = (distance/radius) * this.topSpeed;
-      desired.setLength(speed);
-    
-    // Otherwise, proceed as seek
-    } else {
-      desired.setLength(this.topSpeed);
-    
-    }
-
-    // Apply our steering formula
-    let steer = new THREE.Vector3();
-    steer.subVectors(desired, this.velocity);
-
-    if (steer.length() > this.maxForce) {
-      steer.setLength(this.maxForce);
-    }
-
-    return steer;
-
-  }
-  
 
 }
