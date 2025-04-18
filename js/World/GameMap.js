@@ -13,8 +13,8 @@ export class GameMap {
   
     // Initialize bounds in here!
     this.bounds = new THREE.Box3(
-      new THREE.Vector3(-100,0,-100), // scene min
-      new THREE.Vector3(100,0,100) // scene max
+      new THREE.Vector3(-200,0,-200), // scene min
+      new THREE.Vector3(200,0,200) // scene max
     );
 
     // worldSize is a Vector3 with 
@@ -24,7 +24,7 @@ export class GameMap {
 
     // Let's define a tile size
     // for our tile-based map
-    this.tileSize = 10;
+    this.tileSize = 20;
 
     // Columns and rows of our tile world
     let cols = this.worldSize.x/this.tileSize;
@@ -54,7 +54,7 @@ export class GameMap {
     this.costMap = this.mapGraph.singleGoalDijkstra(this.goal);
 
     // create a random start node
-    this.start = this.createRandomStart(this.goal, this.costMap, 20);
+    this.start = this.createStart(20);
 
     // create our vector flow field for npc pathfinding
     this.vectorField = this.setupVectorField(this.goal);
@@ -84,22 +84,25 @@ export class GameMap {
     return goalNode;
   }
 
-  createRandomStart(goal, costMap, minDistance) {
-    let startNode = null;
+  createStart(startDistance){
+    let startNode = this.getRandomDistantNode(startDistance);
+    this.gameObject.add(this.mapRenderer.highlight(startNode, 'red'));
+    return startNode;
+  }
 
-    // Keep trying until we find a valid start node
-    while (!startNode) {
+  getRandomDistantNode(minDistance) {
+    let distNode = null;
+
+    // Keep trying until we find a valid distant node
+    while (!distNode) {
         let randomNode = this.mapGraph.getRandomGroundNode();
 
         // Ensure the node is far enough from the goal
-        if (costMap.get(randomNode) >= minDistance) {
-            startNode = randomNode;
-
-            // Highlight the start node in blue
-            this.gameObject.add(this.mapRenderer.highlight(startNode, 'red'));
+        if (this.costMap.get(randomNode) >= minDistance) {
+            distNode = randomNode;
         }
     }
-    return startNode;
+    return distNode;
   }
 
   setupVectorField(goal) {

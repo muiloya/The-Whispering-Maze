@@ -3,49 +3,55 @@ import { State } from '../State.js';
 import * as THREE from 'three';
 
 // State Implementations
-class FollowingState extends State {
-    enterState(oracle) {
-      oracle.lastHintTime = performance.now() / 1000;
+class WanderState extends State {
+  enterState(oracle, player) {
+    oracle.location = oracle.randomSpawn(oracle.player);
+  }
+
+  updateState(oracle, player) {
+    if (player.location.distanceTo(oracle.location) < 5){
+      console.log(" This is where I should hint but yousef has to do that!");
+      // potential turn to player here too
     }
-  
-    updateState(oracle, player) {
-      const currentTime = performance.now() / 1000;
-      
-      if (currentTime - oracle.lastHintTime > oracle.hintCooldown) {
-        oracle.switchState(new HintingState());
+    // have another else here to switch to wanderstate after a timeout
+    // in case player never finds oracle
+    else {
+      let steer = oracle.avoidMultipleCollisions();
+      if (steer.length() === 0){
+        steer = oracle.wander();
       }
+      oracle.applyForce(steer);
     }
+    
+  }
 }
 
 class HintingState extends State {
-    enterState(oracle) {
+    enterState(oracle, player) {
       oracle.lastHintTime = performance.now() / 1000;
     }
   
     updateState(oracle, player) {
       oracle.provideHint(player);
-      oracle.switchState(new FollowingState());
+      oracle.switchState(new WanderState());
     }
 }
 
 export class Oracle extends NPC {
-  constructor(gameMap) {
+  constructor(gameMap, player) {
     super(new THREE.Color(0x00ff00));
     this.gameMap = gameMap;
-    this.player = null;
+    this.player = player;
 
-    this.currentState = new FollowingState();
-    this.currentState.enterState(this);
+    this.currentState = new WanderState();
+    this.currentState.enterState(this, player);
     
     //I tried others but 3 seconds seems the best
     this.hintCooldown = 3;
-    this.lastHintTime = 0;
+    this.lastHintTime = 3;
     
-    this.topSpeed = 30;          // Increased top speed
-    this.maxForce = 50;          // Stronger steering force
-    this.followDistance = 6;     // Distance to maintain
-    this.slowingRadius = 4;      // Start slowing within this radius
-    this.panicDistance = 3;    // Full stop when this close
+    this.topSpeed = 5; 
+    this.maxForce = 5; 
 
   }
 
@@ -56,45 +62,17 @@ export class Oracle extends NPC {
 
   update(deltaTime, player, bounds) {
     super.update(deltaTime, bounds);
-    this.player = player;
+
     this.currentState.updateState(this, player);
-    
-    // Maintain following behavior
-    this.followPlayer(player);
     this.gameObject.position.copy(this.location);
   }
 
-  followPlayer(player) {
-    // Get player's movement direction from velocity
-    const playerVel = new THREE.Vector3(
-      player.velocity.x,
-      0,
-      player.velocity.z
-    ).normalize();
-  
-    // Calculate target position behind player 
-    const targetPosition = new THREE.Vector3()
-      .copy(player.location)
-      .sub(playerVel.multiplyScalar(this.followDistance));
-  
-    // Use distance calculation
-    const toTarget = new THREE.Vector3(
-      targetPosition.x - this.location.x,
-      0,
-      targetPosition.z - this.location.z
-    );
-    const distance = toTarget.length();
-  
-    // Arrive behavior
-    if(distance < this.panicDistance) {
-      this.velocity.set(0, 0, 0);
-    } else {
-      const steering = this.arrive(targetPosition, this.slowingRadius);
-      this.applyForce(new THREE.Vector3(steering.x, 0, steering.z));
-    }
-  
-    // Maintain Y position if needed
-    this.location.y = player.location.y; // Match player's height if any
+  // get a random spawn point somewhere near the player.
+  randomSpawn(player){
+    const playerNode = this.gameMap.quantize(player.location);  
+    const distance = this.gameMap.costMap.get(playerNode);
+    const spawnNode = this.gameMap.getRandomDistantNode(distance);
+    return this.gameMap.localize(spawnNode);
   }
 
   provideHint(player) {
@@ -102,35 +80,41 @@ export class Oracle extends NPC {
     const goalNode = this.gameMap.goal;
     
     if (!playerNode || !goalNode) return;
+
+    let message;
   
     // First check if player is exactly at goal
     if (playerNode.id === goalNode.id) {
-      console.log("Oracle shouts: \"We've arrived!\"");
-      return;
+      message = "Oracle shouts: \"We've arrived!\"";
+    }else{
+      const distance = this.gameMap.costMap.get(playerNode);
+      const direction = this.gameMap.vectorField.get(playerNode);
+      if (!direction || distance === Infinity) {
+      message = "Oracle whispers: \"I do not think this is the right way...\"";
+    }else{
+      const compassDir = this.vectorToCompass(direction);
+      if (distance > 15) {
+        message = "I do not think this is the right way";
+      } else if (distance < 5) {
+        message = `Almost there! Follow ${compassDir}`;
+      } else if (distance < 10) {
+        message = `Warmer... Continue ${compassDir}`;
+      } else {
+        message = `The path lies ${compassDir}ward`;
+      }
     }
-  
-    const distance = this.gameMap.costMap.get(playerNode);
-    const direction = this.gameMap.vectorField.get(playerNode);
-    
-    if (!direction || distance === Infinity) {
-      console.log("Oracle whispers: \"I do not think this is the right way...\"");
-      return;
+
+    this.textMgr.removeText('oracleHint');
+    this.textMgr.createText(
+      'oracleHint',
+      message,
+      null,                   // default (bottom-center)
+      { color: 'white', background: 'rgba(0,0,0,0.5)', padding: '8px' }
+    );
+
+    // auto‑clear after 3 seconds
+    setTimeout(() => this.textMgr.removeText('oracleHint'), 3000);
     }
-  
-    const compassDir = this.vectorToCompass(direction);
-    
-    let hint = "";
-    if (distance > 15) {
-      hint = "I do not think this is the right way";
-    } else if (distance < 5) {
-      hint = `Almost there! Follow ${compassDir}`;
-    } else if (distance < 10) {
-      hint = `Warmer... Continue ${compassDir}`;
-    } else {
-      hint = `The path lies ${compassDir}ward`;
-    }
-    
-    console.log(`Oracle whispers: "${hint}"`);
   }
   
   //using the dot product method

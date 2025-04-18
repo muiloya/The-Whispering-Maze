@@ -5,6 +5,7 @@ import { Player } from './Behaviour/Player/Player.js';
 import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
+import { TextManager } from './TextManager.js';
 
 
 // Create Scene
@@ -25,7 +26,7 @@ const player = new Player();
 
 // Load in our resources
 let files = [{name:"sportscar",url:"/models/sportscar.glb"},
-  {name:"oracle",url:"/models/simple_ghost.glb"}];
+  {name:"oracle",url:"/models/Ghost_model.glb"}];
 const resources = new Resources(files);
 await resources.loadAll();
 
@@ -33,7 +34,7 @@ player.setModel(resources.get("sportscar"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 15, 0);
+const cameraOffset = new THREE.Vector3(0, 50, 0);
 
 // Setup our scene
 function init() {
@@ -66,12 +67,16 @@ function init() {
   controller = new Controller(document, camera); // Initialize controller
   player.location.copy(gameMap.localize(gameMap.start));
   scene.add(player.gameObject);
+  player.gameMap = gameMap;
 
-  oracle = new Oracle(gameMap);
+  oracle = new Oracle(gameMap, player);
   oracle.setModel(resources.get("oracle"));
   oracle.location.copy(gameMap.localize(gameMap.start))
           .add(new THREE.Vector3(20, 0, 20)); // Offset from player
+  const textMgr = new TextManager();
+  oracle.textMgr = textMgr;
   scene.add(oracle.gameObject);
+  oracle.setupDebugInfo(scene);
 
   // Camera positioning
   camera.position.copy(player.location).add(cameraOffset);
