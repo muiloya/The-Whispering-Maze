@@ -43,11 +43,7 @@ const cameraOffset = new THREE.Vector3(0, 25, 0);
 function finishGame() {
   gameFinished = true;
    // reload or restart logic:
-  new StartScreen(() => {
-    // clear the scene and re‑init
-    document.body.innerHTML = '';
-    startGame();
-  }, /* Still need to update startGame so that instead of the game just restarting it shows a screen that says fin and if the person presses the button again it restarts */);
+   new StartScreen(() => window.location.reload());
 }
 
 // Setup our scene
