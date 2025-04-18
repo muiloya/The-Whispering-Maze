@@ -7,10 +7,10 @@ class WanderState extends State {
   enterState(oracle, player) {
     oracle.location = oracle.randomSpawn(player);
     
-    // Set a fallback timeout: if player doesn't get close in 3s, switch back
-    oracle.wanderTimeout = setTimeout(() => {
+    // Set a fallback timeout: if player doesn't get close in 20s, respawn
+    oracle.fallbackTimeout = setTimeout(() => {
       oracle.switchState(new WanderState());
-      oracle.wanderTimeout = null;
+      oracle.fallbackTimeout = null;
     }, 20000);
   }
 
@@ -32,25 +32,20 @@ class WanderState extends State {
 // Hinting: compute 5-step hint, show it, teleport, resume wandering
 class HintingState extends State {
   enterState(oracle, player) {
-    this.oracle = oracle;
-    this.player = player;
     this.startTime = performance.now() / 1000;
     this.hinted = false;
     // freeze
     oracle.velocity.set(0, 0, 0);
   }
-  updateState(oracle) {
+
+  updateState(oracle, player) {
     const now = performance.now() / 1000;
     if (!this.hinted && now - this.startTime > 1) {
       // compute flow-field path from player node
-      const startNode = oracle.gameMap.quantize(this.player.location);
+      const startNode = oracle.gameMap.quantize(player.location);
       const fullPath  = oracle.computePathNodes(startNode);
       const nextFive  = fullPath.slice(0, 5);
-      // const dirs = nextFive.map((node, i) => {
-      //   const prev = i === 0 ? startNode : nextFive[i - 1];
-      //   const vec  = oracle.gameMap.vectorField.get(prev);
-      //   return oracle.vectorToCompass(vec);
-      // });
+
       const dirs = [];
       for (let i = 0; i < nextFive.length; i++) {
         let prev;
@@ -88,12 +83,10 @@ export class Oracle extends NPC {
     this.hintDistance = 8;
     this.topSpeed = 5; 
     this.maxForce = 5; 
-    this.wanderTimeout = null;
+    this.fallbackTimeout = null;
 
     this.currentState = new WanderState();
     this.currentState.enterState(this, player);
-    
-
   }
 
   switchState(newState) {
