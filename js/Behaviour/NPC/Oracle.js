@@ -71,10 +71,6 @@ class HintingState extends State {
         oracle.textMgr.createText('oracleHint', message, {}, 5000);
       }
 
-      // teleport
-      oracle.location.copy(oracle.randomSpawn(this.player));
-      oracle.gameObject.position.copy(oracle.location);
-
       this.hinted = true;
       // back to wander
       oracle.switchState(new WanderState());
