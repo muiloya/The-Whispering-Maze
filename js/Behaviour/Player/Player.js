@@ -7,8 +7,8 @@ export class Player extends Character {
   constructor(color) {
     super(color);
   
-    this.topSpeed = 40;     // slower than the oracle
-    this.maxForce = 40;    // weaker steering so you don’t slide past walls
+    this.topSpeed = 40;  
+    this.maxForce = 100;   
 
     this.state = new IdleState();
     this.state.enterState(this);
