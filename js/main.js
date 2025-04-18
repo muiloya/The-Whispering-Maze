@@ -5,7 +5,7 @@ import { Player } from './Behaviour/Player/Player.js';
 import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
-import { TextManager } from './TextManager.js';
+import { TextManager } from './Util/TextManager.js';
 
 
 // Create Scene
