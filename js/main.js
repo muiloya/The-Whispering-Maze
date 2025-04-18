@@ -6,6 +6,7 @@ import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
 import { TextManager } from './Util/TextManager.js';
+import { StartScreen } from './Startup_page.js';
 
 
 // Create Scene
@@ -24,17 +25,31 @@ let controller;
 let oracle;
 const player = new Player();
 
+let finishTimer = null;
+let gameFinished = false;
+
 // Load in our resources
-let files = [{name:"sportscar",url:"/models/sportscar.glb"},
+let files = [{name:"robot",url:"/models/robot.glb"},
   {name:"oracle",url:"/models/Ghost_model.glb"}];
 const resources = new Resources(files);
 await resources.loadAll();
 
-player.setModel(resources.get("sportscar"));
+player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
 const cameraOffset = new THREE.Vector3(0, 50, 0);
+
+function finishGame() {
+  gameFinished = true;
+   // reload or restart logic:
+  new StartScreen(() => window.location.reload());
+  new StartScreen(() => {
+    // clear the scene and re‑init
+    document.body.innerHTML = '';
+    startGame();
+  }, /* Still need to update startGame so that instead of the game just restarting it shows a screen that says fin and if the person presses the button again it restarts */);
+}
 
 // Setup our scene
 function init() {
@@ -82,8 +97,7 @@ function init() {
   camera.position.copy(player.location).add(cameraOffset);
   camera.lookAt(player.location);
 
-
-  // First call to animate
+  // First animate call
   animate();
 }
 
@@ -103,8 +117,18 @@ function animate() {
     player.update(deltaTime, gameMap.bounds, controller); // Pass controller
   }
 
-  if (oracle && player) {
-    oracle.update(deltaTime, player, gameMap.bounds);
+  if (!gameFinished) {
+    if (oracle && player) oracle.update(deltaTime, player, gameMap.bounds);
+      // check for player on goal
+      const pNode = gameMap.quantize(player.location);
+      if (pNode && pNode.id === gameMap.goal.id) {
+        if (finishTimer === null) finishTimer = clock.getElapsedTime();
+        else if (clock.getElapsedTime() - finishTimer > 1) {
+          finishGame();
+        }
+      } else {
+        finishTimer = null;
+      }
   }
 
   updateCameraPosition()
@@ -112,4 +136,8 @@ function animate() {
 }
 
 
-init();
+function startGame() {
+  init();
+}
+
+new StartScreen(startGame);
