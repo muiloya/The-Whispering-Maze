@@ -18,3 +18,5 @@
 - [ ] Find suitable models for player & oracle  
 - [ ] Playthrough testing
 - [ ] Refactor main.js
+
+x
