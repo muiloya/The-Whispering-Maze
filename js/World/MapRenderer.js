@@ -10,7 +10,7 @@ export class MapRenderer {
     this.gameMap = gameMap;
 
     // Wall dimensions based on tile size
-    this.wallDepth = this.gameMap.tileSize * 0.1;
+    this.wallDepth = this.gameMap.tileSize * 0.05;
     this.wallWidth = this.gameMap.tileSize + this.wallDepth;
     this.wallHeight = this.gameMap.tileSize;
   }

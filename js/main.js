@@ -38,12 +38,11 @@ player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 50, 0);
+const cameraOffset = new THREE.Vector3(0, 25, 0);
 
 function finishGame() {
   gameFinished = true;
    // reload or restart logic:
-  new StartScreen(() => window.location.reload());
   new StartScreen(() => {
     // clear the scene and re‑init
     document.body.innerHTML = '';
