@@ -5,24 +5,33 @@ import * as THREE from 'three';
 // State Implementations
 class WanderState extends State {
   enterState(oracle, player) {
-    oracle.location = oracle.randomSpawn(oracle.player);
+    oracle.location = oracle.randomSpawn(player);
+    
+    // Set a fallback timeout: if player doesn't get close in 3s, switch back
+    oracle.wanderTimeout = setTimeout(() => {
+      oracle.switchState(new WanderState());
+      oracle.wanderTimeout = null;
+    }, 10000);
   }
 
   updateState(oracle, player) {
-    if (player.location.distanceTo(oracle.location) < 5){
-      console.log(" This is where I should hint but yousef has to do that!");
-      // potential turn to player here too
-    }
-    // have another else here to switch to wanderstate after a timeout
-    // in case player never finds oracle
-    else {
+    const distance = player.location.distanceTo(oracle.location);
+
+    if (distance < 5) {
+      console.log("This is where I should hint but yousef has to do that!");
+
+      // Player got close — cancel timeout 
+      if (oracle.wanderTimeout) {
+        clearTimeout(oracle.wanderTimeout);
+        oracle.wanderTimeout = null;
+      }
+    } else {
       let steer = oracle.avoidMultipleCollisions();
-      if (steer.length() === 0){
+      if (steer.length() === 0) {
         steer = oracle.wander();
       }
       oracle.applyForce(steer);
     }
-    
   }
 }
 
@@ -53,11 +62,12 @@ export class Oracle extends NPC {
     this.topSpeed = 5; 
     this.maxForce = 5; 
 
+    this.wanderTimeout = null;
   }
 
   switchState(newState) {
     this.currentState = newState;
-    this.currentState.enterState(this);
+    this.currentState.enterState(this, this.player);
   }
 
   update(deltaTime, player, bounds) {
@@ -67,11 +77,26 @@ export class Oracle extends NPC {
     this.gameObject.position.copy(this.location);
   }
 
-  // get a random spawn point somewhere near the player.
+  // get a random spawn point somewhere (hopefully) near the player.
   randomSpawn(player){
+    const offset = 5;
+
     const playerNode = this.gameMap.quantize(player.location);  
-    const distance = this.gameMap.costMap.get(playerNode);
-    const spawnNode = this.gameMap.getRandomDistantNode(distance);
+    const playerDist = this.gameMap.costMap.get(playerNode);
+
+    const minDist = playerDist - offset;
+    const maxDist = playerDist + offset;
+    let spawnNode = null;
+
+    while (!spawnNode){
+      const randomNode = this.gameMap.getRandomDistantNode(minDist);
+      const randomDist = this.gameMap.costMap.get(randomNode);
+
+      if (randomDist > minDist && randomDist < maxDist) {
+        spawnNode = randomNode;
+      }
+    }
+    
     return this.gameMap.localize(spawnNode);
   }
 
