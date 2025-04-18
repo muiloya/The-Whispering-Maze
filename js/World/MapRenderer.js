@@ -125,21 +125,18 @@ export class MapRenderer {
 
   // Create an individual tile geometry
   createTileGeometry(node, height) {
-    // The coordinates of our top left edge of the tile
     let position = this.gameMap.localize(node);
 
-    // Set the geometry of our tile
-    let geometry = 
-      new THREE.BoxGeometry(
-        this.gameMap.tileSize, 
-        height,
-        this.gameMap.tileSize
-      );
-
-    // Translate our geomtery to the required position
-    geometry.translate(position);
-    geometry.translate(0, height/2, 0);
-
+    let geometry = new THREE.TorusGeometry(
+      this.gameMap.tileSize * 0.4,
+      this.gameMap.tileSize * 0.05,
+      16,
+      32
+    );
+  
+    geometry.rotateX(Math.PI / 2);
+    geometry.translate(position.x, position.y + 0.5, position.z);
+  
     return geometry;
   }
 
