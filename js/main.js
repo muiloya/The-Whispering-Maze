@@ -91,7 +91,6 @@ function init() {
   const textMgr = new TextManager();
   oracle.textMgr = textMgr;
   scene.add(oracle.gameObject);
-  oracle.setupDebugInfo(scene);
 
   // Camera positioning
   camera.position.copy(player.location).add(cameraOffset);
@@ -118,17 +117,21 @@ function animate() {
   }
 
   if (!gameFinished) {
-    if (oracle && player) oracle.update(deltaTime, player, gameMap.bounds);
-      // check for player on goal
-      const pNode = gameMap.quantize(player.location);
-      if (pNode && pNode.id === gameMap.goal.id) {
-        if (finishTimer === null) finishTimer = clock.getElapsedTime();
-        else if (clock.getElapsedTime() - finishTimer > 1) {
-          finishGame();
-        }
-      } else {
-        finishTimer = null;
+    if (oracle && player) {
+      oracle.update(deltaTime, player, gameMap.bounds);
+    }
+  
+    // Check if player is on the goal
+    const pNode = gameMap.quantize(player.location);
+    if (pNode && pNode.id === gameMap.goal.id) {
+      if (finishTimer === null) {
+        finishTimer = clock.getElapsedTime();
+      } else if (clock.getElapsedTime() - finishTimer > 1) {
+        finishGame();
       }
+    } else {
+      finishTimer = null;
+    }
   }
 
   updateCameraPosition()

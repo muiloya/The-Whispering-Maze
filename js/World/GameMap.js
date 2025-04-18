@@ -53,7 +53,7 @@ export class GameMap {
     // create our costmap using dijkstra
     this.costMap = this.mapGraph.singleGoalDijkstra(this.goal);
 
-    // create a random start node
+    // create a random start node at a specific distance from the end
     this.start = this.createStart(20);
 
     // create our vector flow field for npc pathfinding

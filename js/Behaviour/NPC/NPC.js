@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { VectorUtil } from '../../Util/VectorUtil';
 import { Character } from '../Character';
-import { DebugLine} from '../Debug';
 
 /**
  * 
@@ -149,30 +148,6 @@ export class NPC extends Character {
 
   }
 
-  // Sets up debug lines
-  setupDebugInfo(scene) {
-    this.debugCenterLine = new DebugLine(scene);
-    this.debugWhisker1Line = new DebugLine(scene);
-    this.debugWhisker2Line = new DebugLine(scene);
-  }
-  
-  // debug whiskers: update line points & colors
-  showDebug(center, left, right, hit) {
-    const start = this.location.clone();
-    const endC  = start.clone().add(center);
-    const endL  = start.clone().add(left);
-    const endR  = start.clone().add(right);
-    const color = hit ? 0xff0000 : 0x00ff00;
-
-    this.debugCenterLine   .setPoints(start, endC);
-    this.debugWhisker1Line .setPoints(start, endL);
-    this.debugWhisker2Line .setPoints(start, endR);
-
-    this.debugCenterLine   .setColor(color);
-    this.debugWhisker1Line .setColor(color);
-    this.debugWhisker2Line .setColor(color);
-  }
-
   avoidMultipleCollisions(lookAhead = this.lookAhead) {
     // grab merged wall mesh from map
     const walls = this.gameMap.gameObject.children[1];
@@ -212,9 +187,6 @@ export class NPC extends Character {
     testWhisker(centerVec);
     testWhisker(leftVec);
     testWhisker(rightVec);
-  
-    // draw debug whiskers
-    this.showDebug(centerVec, leftVec, rightVec, hit);
   
     if (steer.length() > this.maxForce) {
       steer.setLength(this.maxForce);

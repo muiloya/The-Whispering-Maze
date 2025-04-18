@@ -27,6 +27,7 @@ export class Player extends Character {
 
     super.update(deltaTime, bounds);
 
+    // ensure character cannot cross walls
     const oldNode = this.gameMap.quantize(oldLoc);
     const newNode = this.gameMap.quantize(this.location);
     if (
