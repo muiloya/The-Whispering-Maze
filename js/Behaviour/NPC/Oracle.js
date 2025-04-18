@@ -11,40 +11,77 @@ class WanderState extends State {
     oracle.wanderTimeout = setTimeout(() => {
       oracle.switchState(new WanderState());
       oracle.wanderTimeout = null;
-    }, 10000);
+    }, 20000);
   }
 
   updateState(oracle, player) {
-    const distance = player.location.distanceTo(oracle.location);
+    const now = performance.now() / 1000;
+    // Trigger hint when player is close
+    const dist = oracle.location.distanceTo(player.location);
+    if (dist < oracle.hintDistance) {
+      oracle.switchState(new HintingState());
+      return;
+    }
+    let steer = oracle.avoidMultipleCollisions();
+    if (steer.length() === 0) steer = oracle.wander();
+    oracle.applyForce(steer);
+    
+  }
+}
 
-    if (distance < 5) {
-      console.log("This is where I should hint but yousef has to do that!");
+// Hinting: compute 5-step hint, show it, teleport, resume wandering
+class HintingState extends State {
+  enterState(oracle, player) {
+    this.oracle = oracle;
+    this.player = player;
+    this.startTime = performance.now() / 1000;
+    this.hinted = false;
+    // freeze
+    oracle.velocity.set(0, 0, 0);
+  }
+  updateState(oracle) {
+    const now = performance.now() / 1000;
+    if (!this.hinted && now - this.startTime > 1) {
+      // compute flow-field path from player node
+      const startNode = oracle.gameMap.quantize(this.player.location);
+      const fullPath  = oracle.computePathNodes(startNode);
+      const nextFive  = fullPath.slice(0, 5);
+      // const dirs = nextFive.map((node, i) => {
+      //   const prev = i === 0 ? startNode : nextFive[i - 1];
+      //   const vec  = oracle.gameMap.vectorField.get(prev);
+      //   return oracle.vectorToCompass(vec);
+      // });
+      const dirs = [];
+      for (let i = 0; i < nextFive.length; i++) {
+        let prev;
+        if (i === 0) {
+          prev = startNode;
+        } else {
+          prev = nextFive[i - 1];
+        }
 
-      // Player got close — cancel timeout 
-      if (oracle.wanderTimeout) {
-        clearTimeout(oracle.wanderTimeout);
-        oracle.wanderTimeout = null;
+        const vec = oracle.gameMap.vectorField.get(prev);
+        dirs.push(oracle.vectorToCompass(vec));
       }
-    } else {
-      let steer = oracle.avoidMultipleCollisions();
-      if (steer.length() === 0) {
-        steer = oracle.wander();
+      const message = `Next moves: ${dirs.join(', ')}`;
+
+      // show hint
+      if (oracle.textMgr) {
+        oracle.textMgr.removeText('oracleHint');
+        oracle.textMgr.createText('oracleHint', message, {}, 5000);
       }
-      oracle.applyForce(steer);
+
+      // teleport
+      oracle.location.copy(oracle.randomSpawn(this.player));
+      oracle.gameObject.position.copy(oracle.location);
+
+      this.hinted = true;
+      // back to wander
+      oracle.switchState(new WanderState());
     }
   }
 }
 
-class HintingState extends State {
-    enterState(oracle, player) {
-      oracle.lastHintTime = performance.now() / 1000;
-    }
-  
-    updateState(oracle, player) {
-      oracle.provideHint(player);
-      oracle.switchState(new WanderState());
-    }
-}
 
 export class Oracle extends NPC {
   constructor(gameMap, player) {
@@ -52,17 +89,15 @@ export class Oracle extends NPC {
     this.gameMap = gameMap;
     this.player = player;
 
+    this.hintDistance = 8;
+    this.topSpeed = 5; 
+    this.maxForce = 5; 
+    this.wanderTimeout = null;
+
     this.currentState = new WanderState();
     this.currentState.enterState(this, player);
     
-    //I tried others but 3 seconds seems the best
-    this.hintCooldown = 3;
-    this.lastHintTime = 3;
-    
-    this.topSpeed = 5; 
-    this.maxForce = 5; 
 
-    this.wanderTimeout = null;
   }
 
   switchState(newState) {
@@ -71,6 +106,7 @@ export class Oracle extends NPC {
   }
 
   update(deltaTime, player, bounds) {
+    this.player = player;
     super.update(deltaTime, bounds);
 
     this.currentState.updateState(this, player);
@@ -100,46 +136,24 @@ export class Oracle extends NPC {
     return this.gameMap.localize(spawnNode);
   }
 
-  provideHint(player) {
-    const playerNode = this.gameMap.quantize(player.location);
-    const goalNode = this.gameMap.goal;
-    
-    if (!playerNode || !goalNode) return;
-
-    let message;
-  
-    // First check if player is exactly at goal
-    if (playerNode.id === goalNode.id) {
-      message = "Oracle shouts: \"We've arrived!\"";
-    }else{
-      const distance = this.gameMap.costMap.get(playerNode);
-      const direction = this.gameMap.vectorField.get(playerNode);
-      if (!direction || distance === Infinity) {
-      message = "Oracle whispers: \"I do not think this is the right way...\"";
-    }else{
-      const compassDir = this.vectorToCompass(direction);
-      if (distance > 15) {
-        message = "I do not think this is the right way";
-      } else if (distance < 5) {
-        message = `Almost there! Follow ${compassDir}`;
-      } else if (distance < 10) {
-        message = `Warmer... Continue ${compassDir}`;
-      } else {
-        message = `The path lies ${compassDir}ward`;
+  computePathNodes(startNode) {
+    const nodes = [];
+    let node = startNode;
+    while (node && node.id !== this.gameMap.goal.id) {
+      let bestEdge = null;
+      let bestCost = Infinity;
+      for (const e of node.edges) {
+        const c = this.gameMap.costMap.get(e.node);
+        if (c < bestCost) {
+          bestCost = c;
+          bestEdge = e;
+        }
       }
+      if (!bestEdge) break;
+      node = bestEdge.node;
+      nodes.push(node);
     }
-
-    this.textMgr.removeText('oracleHint');
-    this.textMgr.createText(
-      'oracleHint',
-      message,
-      null,                   // default (bottom-center)
-      { color: 'white', background: 'rgba(0,0,0,0.5)', padding: '8px' }
-    );
-
-    // auto‑clear after 3 seconds
-    setTimeout(() => this.textMgr.removeText('oracleHint'), 3000);
-    }
+    return nodes;
   }
   
   //using the dot product method
