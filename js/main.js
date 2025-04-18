@@ -6,7 +6,7 @@ import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
 import { TextManager } from './Util/TextManager.js';
-import { StartScreen } from './Startup_page.js';
+import { StartScreen } from './GUI/Startup_page.js';
 
 
 // Create Scene
