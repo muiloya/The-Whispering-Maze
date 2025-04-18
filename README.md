@@ -34,5 +34,5 @@ A vector field is used to implement hint logic via Dijkstra’s cost map. \
 The maze is generated at runtime using a DFS backtracking algorithm.\
 **How to view**: Each new game starts with a new, solvable maze layout.
 - **Wander**\
-The maze is generated at runtime using a DFS backtracking algorithm.\
-**How to view**: Each new game starts with a new, solvable maze layout.
+The oracle moves randomly through the maze, avoiding walls until you approach. \
+**How to view**: While observing the oracle it is moving in an unpredictable manner.
