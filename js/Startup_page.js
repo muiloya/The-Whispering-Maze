@@ -63,8 +63,7 @@ export class StartScreen {
       }
       this.container.appendChild(ruleBox);
   
-      // Prompt
-        // Prompt (highlighted)
+    // Prompt
     const prompt = document.createElement('p');
     prompt.textContent = 'Press any button to start the game';
     Object.assign(prompt.style, {
