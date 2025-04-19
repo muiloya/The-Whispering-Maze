@@ -20,7 +20,7 @@ export class MapRenderer {
   createRendering() {
 
     // Create material and geometry for the ground
-    let groundMaterial = new THREE.MeshStandardMaterial({ color: 'lightgray' });
+    let groundMaterial = new THREE.MeshStandardMaterial({ color: 'gray' });
     let groundGeometry = new THREE.BoxGeometry(
       this.gameMap.worldSize.x, 
       this.gameMap.tileSize, 

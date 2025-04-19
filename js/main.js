@@ -46,7 +46,7 @@ const cameraOffset = new THREE.Vector3(0, 25, 0);
 // Setup our scene
 function init() {
   
-  scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(0x000000);
   
   // Camera
   camera.position.y = 180;
