@@ -10,7 +10,7 @@ class WanderState extends State {
     // Set a fallback timeout: if player doesn't get close in 20s, respawn
     oracle.fallbackTimeout = setTimeout(() => {
       oracle.switchState(new WanderState());
-    }, 20000);
+    }, 10000);
   }
 
   updateState(oracle, player) {
