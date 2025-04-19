@@ -41,7 +41,7 @@ player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 160, 0);
+const cameraOffset = new THREE.Vector3(0, 25, 0);
 
 // Setup our scene
 function init() {
@@ -118,7 +118,7 @@ function animate() {
     if (pNode && pNode.id === gameMap.goal.id) {
       if (finishTimer === null) {
         finishTimer = clock.getElapsedTime();
-      } else if (clock.getElapsedTime() - finishTimer > 1) {
+      } else if (clock.getElapsedTime() - finishTimer > 0.25) {
         finishGame();
       }
     } else {
