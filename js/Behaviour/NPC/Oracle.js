@@ -10,22 +10,76 @@ class WanderState extends State {
     // Set a fallback timeout: if player doesn't get close in 20s, respawn
     oracle.fallbackTimeout = setTimeout(() => {
       oracle.switchState(new WanderState());
-      oracle.fallbackTimeout = null;
     }, 20000);
   }
 
   updateState(oracle, player) {
     const now = performance.now() / 1000;
-    // Trigger hint when player is close
+    // Trigger hinting/solving when player is close
     const dist = oracle.location.distanceTo(player.location);
     if (dist < oracle.hintDistance) {
-      oracle.switchState(new HintingState());
+      // coin toss: 50% Solving, else Hinting
+      function coinToss(prob = 0.50) {
+        return Math.random() < prob;
+      }
+      if (coinToss()) {
+        oracle.switchState(new SolvingState());
+      } else {
+        oracle.switchState(new HintingState());
+      }
       return;
     }
     let steer = oracle.avoidMultipleCollisions();
     if (steer.length() === 0) steer = oracle.wander();
     oracle.applyForce(steer);
     
+  }
+}
+
+class SolvingState extends State {
+  enterState(oracle) {
+    this.oracle = oracle;
+    this.startTime = performance.now() / 1000;
+
+    // keep track of old speeds
+    this.oldTopSpeed  = oracle.topSpeed;
+    this.oldMaxForce = oracle.maxForce;
+
+    //  faster speed
+    oracle.topSpeed  = 20;  
+    oracle.maxForce = 50; 
+
+    // zero out any residual motion
+    oracle.velocity.set(0, 0, 0);
+    // “Follow me” message for 3s
+    if (oracle.textMgr) {
+      oracle.textMgr.removeText('oracleHint');
+      oracle.textMgr.createText('oracleHint', 'Follow me!', {}, 3000);
+    }
+  }
+
+  updateState(oracle) {
+    const now = performance.now() / 1000;
+    if (now - this.startTime < 5) {
+      // Find which node the oracle is on
+      const node = oracle.gameMap.quantize(oracle.location);
+      // Grab the unit‐vector from the flow field
+      const flowDir = oracle.gameMap.vectorField.get(node);
+      // Scale it up to a force, and apply
+      const steer = flowDir.clone().multiplyScalar(oracle.maxForce);
+      oracle.applyForce(steer);
+
+    } else {
+
+      // restore original speeds
+      oracle.topSpeed  = this.oldTopSpeed;
+      oracle.maxForce = this.oldMaxForce;
+
+      // resume wandering
+      oracle.location.copy(oracle.randomSpawn(oracle.player));
+      oracle.gameObject.position.copy(oracle.location);
+      oracle.switchState(new WanderState());
+    }
   }
 }
 
@@ -87,9 +141,15 @@ export class Oracle extends NPC {
 
     this.currentState = new WanderState();
     this.currentState.enterState(this, player);
+
   }
 
   switchState(newState) {
+    // clear any pending respawn
+    if (this.fallbackTimeout) {
+      clearTimeout(this.fallbackTimeout);
+      this.fallbackTimeout = null;
+    }
     this.currentState = newState;
     this.currentState.enterState(this, this.player);
   }

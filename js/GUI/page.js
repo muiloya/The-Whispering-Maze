@@ -106,5 +106,70 @@ export class StartScreen {
         this.container.parentElement.removeChild(this.container);
       }
     }
+}
+
+export class EndScreen {
+  /**
+   * @param {Function} onRestart called when user presses any key or clicks
+   */
+  constructor(onRestart) {
+    this.onRestart = onRestart;
+
+    // Create full‑screen transparent overlay
+    this.container = document.createElement('div');
+    Object.assign(this.container.style, {
+      position:   'fixed',
+      top:        '0',
+      left:       '0',
+      right:      '0',
+      bottom:     '0',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display:    'flex',
+      flexDirection:  'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      color:      '#ffffff',
+      fontFamily: 'sans-serif',
+      zIndex:     '10000'
+    });
+
+    // Big "Fin"
+    const fin = document.createElement('h1');
+    fin.textContent = 'Fin';
+    Object.assign(fin.style, {
+      fontSize:   '96px',
+      margin:     '0'
+    });
+    this.container.appendChild(fin);
+
+    // Small “press any button to restart”
+    const prompt = document.createElement('p');
+    prompt.textContent = 'Press any button to restart';
+    Object.assign(prompt.style, {
+      fontSize:   '20px',
+      marginTop:  '20px',
+      cursor:     'pointer'
+    });
+    this.container.appendChild(prompt);
+
+    document.body.appendChild(this.container);
+
+    // Bind input events
+    this._onKey = this._onKey.bind(this);
+    window.addEventListener('keydown', this._onKey);
+    window.addEventListener('mousedown', this._onKey);
   }
-  
+
+  _onKey() {
+    this.destroy();
+    this.onRestart();
+  }
+
+  destroy() {
+    window.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('mousedown', this._onKey);
+    if (this.container.parentElement) {
+      this.container.parentElement.removeChild(this.container);
+    }
+  }
+}
