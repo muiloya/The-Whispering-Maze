@@ -148,7 +148,7 @@ export class NPC extends Character {
 
   }
 
-  avoidMultipleCollisions(lookAhead = this.lookAhead) {
+  avoidMultipleCollisions(lookAhead = this.whiskerLength) {
     // grab merged wall mesh from map
     const walls = this.gameMap.gameObject.children[1];
     const origin = this.location.clone();
