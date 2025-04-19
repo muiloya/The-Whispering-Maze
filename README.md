@@ -18,7 +18,7 @@ In a browser, go to the given address to play the game.\
 
 ## Controls
 - W, A, S, D or Arrow Keys to Move the player
-- To start or restart the game press any button when promted
+- To start or restart the game press any button when prompted
 
 ## Topics Implemented
 - **Collision Avoidance** \
