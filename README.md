@@ -6,7 +6,7 @@ The **Whispering Maze** is a puzzle game where the player navigates through a my
 
 ## How to Run
 
-1. **Install dependecies**  
+1. **Install dependencies**  
    ```bash
    npm install three.js
    npm install vite
