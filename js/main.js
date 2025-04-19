@@ -6,7 +6,8 @@ import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
 import { TextManager } from './Util/TextManager.js';
-import { StartScreen } from './GUI/Startup_page.js';
+import { StartScreen } from './GUI/page.js';
+import { EndScreen } from './GUI/page.js';
 
 
 // Create Scene
@@ -28,6 +29,8 @@ const player = new Player();
 let finishTimer = null;
 let gameFinished = false;
 
+let animationId;
+
 // Load in our resources
 let files = [{name:"robot",url:"/models/robot.glb"},
   {name:"oracle",url:"/models/Ghost_model.glb"}];
@@ -38,17 +41,7 @@ player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 25, 0);
-
-function finishGame() {
-  gameFinished = true;
-   // reload or restart logic:
-  new StartScreen(() => {
-    // clear the scene and re‑init
-    document.body.innerHTML = '';
-    startGame();
-  }, /* Still need to update startGame so that instead of the game just restarting it shows a screen that says fin and if the person presses the button again it restarts */);
-}
+const cameraOffset = new THREE.Vector3(0, 160, 0);
 
 // Setup our scene
 function init() {
@@ -109,7 +102,7 @@ function updateCameraPosition() {
 // animate loop
 function animate() {
   const deltaTime = clock.getDelta();
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
 
   if(player) {
     player.update(deltaTime, gameMap.bounds, controller); // Pass controller
@@ -141,5 +134,11 @@ function animate() {
 function startGame() {
   init();
 }
+new StartScreen(startGame());
 
-new StartScreen(startGame);
+function finishGame() {
+  cancelAnimationFrame(animationId);
+  new EndScreen(() => {
+    window.location.reload();
+  });
+}
