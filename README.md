@@ -7,14 +7,21 @@ The **Whispering Maze** is a puzzle game where the player navigates through a my
 ## How to Run
 
 1. **Install dependencies**  
+   Make sure you're in the root directory of the project, then run:  
    ```bash
-   npm install three.js
+   npm install three
    npm install vite
-2. **Play the game**
-    ```bash
-    npx vite
-In a browser, go to the given address to play the game.\
-**Note**: For the installing, make sure you are in the same directory as your files or execute these commands in the root directory.
+   ```
+
+2. **Start the game**  
+   Launch the development server with:  
+   ```bash
+   npx vite
+   ```
+
+   Open your browser and navigate to the address provided in the terminal.
+
+**Note:** Ensure you are in the correct project directory before running these commands.
 
 ## Controls
 - W, A, S, D or Arrow Keys to Move the player
