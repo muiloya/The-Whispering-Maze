@@ -37,7 +37,7 @@ class WanderState extends State {
 }
 
 class SolvingState extends State {
-  enterState(oracle) {
+  enterState(oracle, player) {
     this.oracle = oracle;
     this.startTime = performance.now() / 1000;
 
@@ -58,7 +58,7 @@ class SolvingState extends State {
     }
   }
 
-  updateState(oracle) {
+  updateState(oracle, player) {
     const now = performance.now() / 1000;
     if (now - this.startTime < 5) {
       // Find which node the oracle is on
