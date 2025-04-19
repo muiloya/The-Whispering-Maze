@@ -76,8 +76,6 @@ class SolvingState extends State {
       oracle.maxForce = this.oldMaxForce;
 
       // resume wandering
-      oracle.location.copy(oracle.randomSpawn(oracle.player));
-      oracle.gameObject.position.copy(oracle.location);
       oracle.switchState(new WanderState());
     }
   }
