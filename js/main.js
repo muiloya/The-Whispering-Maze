@@ -6,8 +6,8 @@ import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
 import { TextManager } from './Util/TextManager.js';
-import { StartScreen } from './GUI/page.js';
-import { EndScreen } from './GUI/page.js';
+import { StartScreen } from './GUI/Page.js';
+import { EndScreen } from './GUI/Page.js';
 
 
 // Create Scene
@@ -41,7 +41,7 @@ player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 25, 0);
+const cameraOffset = new THREE.Vector3(0, 200, 0);
 
 // Setup our scene
 function init() {
@@ -134,7 +134,7 @@ function animate() {
 function startGame() {
   init();
 }
-new StartScreen(startGame());
+new StartScreen(startGame);
 
 function finishGame() {
   cancelAnimationFrame(animationId);
