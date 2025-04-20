@@ -60,6 +60,14 @@ class SolvingState extends State {
 
   updateState(oracle, player) {
     const now = performance.now() / 1000;
+    // if the oracle is inside the circle it will stop
+    const goalCenter = oracle.gameMap.localize(oracle.gameMap.goal);
+    const goalRadius = oracle.gameMap.tileSize * 0.4;
+    if (oracle.location.distanceTo(goalCenter) <= goalRadius) {
+      // zero out motion and bail
+      oracle.velocity.set(0, 0, 0);
+      return;
+    }
     if (now - this.startTime < 5) {
       // Find which node the oracle is on
       const node = oracle.gameMap.quantize(oracle.location);
