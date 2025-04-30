@@ -3,134 +3,212 @@ import { State } from '../State.js';
 import * as THREE from 'three';
 
 // State Implementations
-class FollowingState extends State {
-    enterState(oracle) {
-      oracle.lastHintTime = performance.now() / 1000;
-    }
-  
-    updateState(oracle, player) {
-      const currentTime = performance.now() / 1000;
-      
-      if (currentTime - oracle.lastHintTime > oracle.hintCooldown) {
+class WanderState extends State {
+  enterState(oracle, player) {
+    oracle.location = oracle.randomSpawn(player);
+    
+    // Set a fallback timeout: if player doesn't get close in 20s, respawn
+    oracle.fallbackTimeout = setTimeout(() => {
+      oracle.switchState(new WanderState());
+    }, 10000);
+  }
+
+  updateState(oracle, player) {
+    const now = performance.now() / 1000;
+    // Trigger hinting/solving when player is close
+    const dist = oracle.location.distanceTo(player.location);
+    if (dist < oracle.hintDistance) {
+      // coin toss: 50% Solving, else Hinting
+      function coinToss(prob = 0.50) {
+        return Math.random() < prob;
+      }
+      if (coinToss()) {
+        oracle.switchState(new SolvingState());
+      } else {
         oracle.switchState(new HintingState());
       }
+      return;
     }
+    let steer = oracle.avoidMultipleCollisions();
+    if (steer.length() === 0) steer = oracle.wander();
+    oracle.applyForce(steer);
+    
+  }
 }
 
-class HintingState extends State {
-    enterState(oracle) {
-      oracle.lastHintTime = performance.now() / 1000;
+class SolvingState extends State {
+  enterState(oracle, player) {
+    this.oracle = oracle;
+    this.startTime = performance.now() / 1000;
+
+    // keep track of old speeds
+    this.oldTopSpeed  = oracle.topSpeed;
+    this.oldMaxForce = oracle.maxForce;
+
+    //  faster speed
+    oracle.topSpeed  = 20;  
+    oracle.maxForce = 50; 
+
+    // zero out any residual motion
+    oracle.velocity.set(0, 0, 0);
+    // “Follow me” message for 3s
+    if (oracle.textMgr) {
+      oracle.textMgr.removeText('oracleHint');
+      oracle.textMgr.createText('oracleHint', 'Follow me!', {}, 3000);
     }
-  
-    updateState(oracle, player) {
-      oracle.provideHint(player);
-      oracle.switchState(new FollowingState());
+  }
+
+  updateState(oracle, player) {
+    const now = performance.now() / 1000;
+    // if the oracle is inside the circle it will stop
+    const goalCenter = oracle.gameMap.localize(oracle.gameMap.goal);
+    const goalRadius = oracle.gameMap.tileSize * 0.4;
+    if (oracle.location.distanceTo(goalCenter) <= goalRadius) {
+      // zero out motion and bail
+      oracle.velocity.set(0, 0, 0);
+      return;
     }
+    if (now - this.startTime < 5) {
+      // Find which node the oracle is on
+      const node = oracle.gameMap.quantize(oracle.location);
+      // Grab the unit‐vector from the flow field
+      const flowDir = oracle.gameMap.vectorField.get(node);
+      // Scale it up to a force, and apply
+      const steer = flowDir.clone().multiplyScalar(oracle.maxForce);
+      oracle.applyForce(steer);
+
+    } else {
+
+      // restore original speeds
+      oracle.topSpeed  = this.oldTopSpeed;
+      oracle.maxForce = this.oldMaxForce;
+
+      // resume wandering
+      oracle.switchState(new WanderState());
+    }
+  }
 }
+
+// Hinting: compute 5-step hint, show it, teleport, resume wandering
+class HintingState extends State {
+  enterState(oracle, player) {
+    this.startTime = performance.now() / 1000;
+    this.hinted = false;
+    // freeze
+    oracle.velocity.set(0, 0, 0);
+  }
+
+  updateState(oracle, player) {
+    const now = performance.now() / 1000;
+    if (!this.hinted && now - this.startTime > 1) {
+      // compute flow-field path from player node
+      const startNode = oracle.gameMap.quantize(player.location);
+      const fullPath  = oracle.computePathNodes(startNode);
+      const nextFive  = fullPath.slice(0, 5);
+
+      const dirs = [];
+      for (let i = 0; i < nextFive.length; i++) {
+        let prev;
+        if (i === 0) {
+          prev = startNode;
+        } else {
+          prev = nextFive[i - 1];
+        }
+
+        const vec = oracle.gameMap.vectorField.get(prev);
+        dirs.push(oracle.vectorToCompass(vec));
+      }
+      const message = `Next moves: ${dirs.join(', ')}`;
+
+      // show hint
+      if (oracle.textMgr) {
+        oracle.textMgr.removeText('oracleHint');
+        oracle.textMgr.createText('oracleHint', message, {}, 5000);
+      }
+
+      this.hinted = true;
+      // back to wander
+      oracle.switchState(new WanderState());
+    }
+  }
+}
+
 
 export class Oracle extends NPC {
-  constructor(gameMap) {
+  constructor(gameMap, player) {
     super(new THREE.Color(0x00ff00));
     this.gameMap = gameMap;
-    this.player = null;
+    this.player = player;
 
-    this.currentState = new FollowingState();
-    this.currentState.enterState(this);
-    
-    //I tried others but 3 seconds seems the best
-    this.hintCooldown = 3;
-    this.lastHintTime = 0;
-    
-    this.topSpeed = 30;          // Increased top speed
-    this.maxForce = 50;          // Stronger steering force
-    this.followDistance = 6;     // Distance to maintain
-    this.slowingRadius = 4;      // Start slowing within this radius
-    this.panicDistance = 3;    // Full stop when this close
+    this.hintDistance = 8;
+    this.topSpeed = 5; 
+    this.maxForce = 5; 
+    this.fallbackTimeout = null;
+
+    this.currentState = new WanderState();
+    this.currentState.enterState(this, player);
 
   }
 
   switchState(newState) {
+    // clear any pending respawn
+    if (this.fallbackTimeout) {
+      clearTimeout(this.fallbackTimeout);
+      this.fallbackTimeout = null;
+    }
     this.currentState = newState;
-    this.currentState.enterState(this);
+    this.currentState.enterState(this, this.player);
   }
 
   update(deltaTime, player, bounds) {
-    super.update(deltaTime, bounds);
     this.player = player;
+    super.update(deltaTime, bounds);
+
     this.currentState.updateState(this, player);
-    
-    // Maintain following behavior
-    this.followPlayer(player);
     this.gameObject.position.copy(this.location);
   }
 
-  followPlayer(player) {
-    // Get player's movement direction from velocity
-    const playerVel = new THREE.Vector3(
-      player.velocity.x,
-      0,
-      player.velocity.z
-    ).normalize();
-  
-    // Calculate target position behind player 
-    const targetPosition = new THREE.Vector3()
-      .copy(player.location)
-      .sub(playerVel.multiplyScalar(this.followDistance));
-  
-    // Use distance calculation
-    const toTarget = new THREE.Vector3(
-      targetPosition.x - this.location.x,
-      0,
-      targetPosition.z - this.location.z
-    );
-    const distance = toTarget.length();
-  
-    // Arrive behavior
-    if(distance < this.panicDistance) {
-      this.velocity.set(0, 0, 0);
-    } else {
-      const steering = this.arrive(targetPosition, this.slowingRadius);
-      this.applyForce(new THREE.Vector3(steering.x, 0, steering.z));
+  // get a random spawn point somewhere (hopefully) near the player.
+  randomSpawn(player){
+    const offset = 5;
+
+    const playerNode = this.gameMap.quantize(player.location);  
+    const playerDist = this.gameMap.costMap.get(playerNode);
+
+    const minDist = playerDist - offset;
+    const maxDist = playerDist + offset;
+    let spawnNode = null;
+
+    while (!spawnNode){
+      const randomNode = this.gameMap.getRandomDistantNode(minDist);
+      const randomDist = this.gameMap.costMap.get(randomNode);
+
+      if (randomDist > minDist && randomDist < maxDist) {
+        spawnNode = randomNode;
+      }
     }
-  
-    // Maintain Y position if needed
-    this.location.y = player.location.y; // Match player's height if any
+    
+    return this.gameMap.localize(spawnNode);
   }
 
-  provideHint(player) {
-    const playerNode = this.gameMap.quantize(player.location);
-    const goalNode = this.gameMap.goal;
-    
-    if (!playerNode || !goalNode) return;
-  
-    // First check if player is exactly at goal
-    if (playerNode.id === goalNode.id) {
-      console.log("Oracle shouts: \"We've arrived!\"");
-      return;
+  computePathNodes(startNode) {
+    const nodes = [];
+    let node = startNode;
+    while (node && node.id !== this.gameMap.goal.id) {
+      let bestEdge = null;
+      let bestCost = Infinity;
+      for (const e of node.edges) {
+        const c = this.gameMap.costMap.get(e.node);
+        if (c < bestCost) {
+          bestCost = c;
+          bestEdge = e;
+        }
+      }
+      if (!bestEdge) break;
+      node = bestEdge.node;
+      nodes.push(node);
     }
-  
-    const distance = this.gameMap.costMap.get(playerNode);
-    const direction = this.gameMap.vectorField.get(playerNode);
-    
-    if (!direction || distance === Infinity) {
-      console.log("Oracle whispers: \"I do not think this is the right way...\"");
-      return;
-    }
-  
-    const compassDir = this.vectorToCompass(direction);
-    
-    let hint = "";
-    if (distance > 15) {
-      hint = "I do not think this is the right way";
-    } else if (distance < 5) {
-      hint = `Almost there! Follow ${compassDir}`;
-    } else if (distance < 10) {
-      hint = `Warmer... Continue ${compassDir}`;
-    } else {
-      hint = `The path lies ${compassDir}ward`;
-    }
-    
-    console.log(`Oracle whispers: "${hint}"`);
+    return nodes;
   }
   
   //using the dot product method

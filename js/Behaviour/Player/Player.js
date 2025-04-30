@@ -7,7 +7,8 @@ export class Player extends Character {
   constructor(color) {
     super(color);
   
-    this.maxForce = 50;
+    this.topSpeed = 40;  
+    this.maxForce = 100;   
 
     this.state = new IdleState();
     this.state.enterState(this);
@@ -20,7 +21,24 @@ export class Player extends Character {
 
   update(deltaTime, bounds, controller) {
     this.state.updateState(this, controller);
+
+    // Remember where we started
+    const oldLoc = this.location.clone();
+
     super.update(deltaTime, bounds);
+
+    // ensure character cannot cross walls
+    const oldNode = this.gameMap.quantize(oldLoc);
+    const newNode = this.gameMap.quantize(this.location);
+    if (
+      oldNode &&
+      newNode &&
+      oldNode.id !== newNode.id &&
+      !oldNode.hasEdgeTo(newNode.i, newNode.j)
+    ) {
+      this.location.copy(oldLoc);
+      this.velocity.set(0, 0, 0);
+    }
   }
   
 }

@@ -5,6 +5,9 @@ import { Player } from './Behaviour/Player/Player.js';
 import { Controller } from './Behaviour/Player/Controller.js';
 import { Oracle } from './Behaviour/NPC/Oracle.js';
 import { Resources } from './Util/Resources.js';
+import { TextManager } from './Util/TextManager.js';
+import { StartScreen } from './GUI/Page.js';
+import { EndScreen } from './GUI/Page.js';
 
 
 // Create Scene
@@ -23,22 +26,27 @@ let controller;
 let oracle;
 const player = new Player();
 
+let finishTimer = null;
+let gameFinished = false;
+
+let animationId;
+
 // Load in our resources
-let files = [{name:"sportscar",url:"/models/sportscar.glb"},
-  {name:"oracle",url:"/models/simple_ghost.glb"}];
+let files = [{name:"robot",url:"/models/robot.glb"},
+  {name:"oracle",url:"/models/Ghost_model.glb"}];
 const resources = new Resources(files);
 await resources.loadAll();
 
-player.setModel(resources.get("sportscar"));
+player.setModel(resources.get("robot"));
 
 
 // Camera follow parameters
-const cameraOffset = new THREE.Vector3(0, 15, 0);
+const cameraOffset = new THREE.Vector3(0, 25, 0);
 
 // Setup our scene
 function init() {
   
-  scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(0x000000);
   
   // Camera
   camera.position.y = 180;
@@ -66,19 +74,21 @@ function init() {
   controller = new Controller(document, camera); // Initialize controller
   player.location.copy(gameMap.localize(gameMap.start));
   scene.add(player.gameObject);
+  player.gameMap = gameMap;
 
-  oracle = new Oracle(gameMap);
+  oracle = new Oracle(gameMap, player);
   oracle.setModel(resources.get("oracle"));
   oracle.location.copy(gameMap.localize(gameMap.start))
           .add(new THREE.Vector3(20, 0, 20)); // Offset from player
+  const textMgr = new TextManager();
+  oracle.textMgr = textMgr;
   scene.add(oracle.gameObject);
 
   // Camera positioning
   camera.position.copy(player.location).add(cameraOffset);
   camera.lookAt(player.location);
 
-
-  // First call to animate
+  // First animate call
   animate();
 }
 
@@ -92,14 +102,28 @@ function updateCameraPosition() {
 // animate loop
 function animate() {
   const deltaTime = clock.getDelta();
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
 
   if(player) {
     player.update(deltaTime, gameMap.bounds, controller); // Pass controller
   }
 
-  if (oracle && player) {
-    oracle.update(deltaTime, player, gameMap.bounds);
+  if (!gameFinished) {
+    if (oracle && player) {
+      oracle.update(deltaTime, player, gameMap.bounds);
+    }
+  
+    // Check if player is on the goal
+    const pNode = gameMap.quantize(player.location);
+    if (pNode && pNode.id === gameMap.goal.id) {
+      if (finishTimer === null) {
+        finishTimer = clock.getElapsedTime();
+      } else if (clock.getElapsedTime() - finishTimer > 0.50) {
+        finishGame();
+      }
+    } else {
+      finishTimer = null;
+    }
   }
 
   updateCameraPosition()
@@ -107,4 +131,14 @@ function animate() {
 }
 
 
-init();
+function startGame() {
+  init();
+}
+new StartScreen(startGame);
+
+function finishGame() {
+  cancelAnimationFrame(animationId);
+  new EndScreen(() => {
+    window.location.reload();
+  });
+}
