@@ -27,7 +27,7 @@ The **Whispering Maze** is a puzzle game where the player navigates through a my
 - W, A, S, D or Arrow Keys to Move the player
 - To start or restart the game press any key when prompted
 
-## Topics Implemented
+## Algorithms Implemented
 - **Collision Avoidance** \
 The oracle uses a three‑whisker raycasting (Reynold's Algorithm) method to detect and steer away from walls.\
 **How to view**: You would notice while the orcale is moving it always attempts to steer away from the walls.
